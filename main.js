@@ -116,7 +116,7 @@ function init() {
 
 function createGUI( model, animations ) {
     // OPCIONES (CONSTANTES) PARA MENÚ DE CICLOS
-    const ciclos = [ 'ocio', 'caminar', 'saltar', 'saludar'];
+    const ciclos = [ 'ocio', 'caminar', 'saltar', 'roblox', 'saludar'];
     // OPCIONES (CONSTANTES) PARA MENÚ DE CAPTURAS DE MOVIMIENTO
     const capturas = [ 'Baile', 'Correr', 'BreakDance' ];
 
@@ -148,10 +148,10 @@ function createGUI( model, animations ) {
         //	2. Sólo 'Death', 'Sitting' y 'Standing' del arreglo ciclos
         // 		--> ciclos.indexOf( clip.name ) >= 4
         //
-        if ( capturas.indexOf( clip.name ) >= 0 || ciclos.indexOf( clip.name ) >= 4 ) {
-            action.clampWhenFinished = true;
-            action.loop = THREE.LoopOnce;
-        }
+        // if ( capturas.indexOf( clip.name ) >= 0 || ciclos.indexOf( clip.name ) >= 4 ) {
+        //     action.clampWhenFinished = true;
+        //     action.loop = THREE.LoopOnce;
+        // }
     }
 
     // ------------------ CICLOS ------------------
