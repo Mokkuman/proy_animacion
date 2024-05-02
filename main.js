@@ -22,9 +22,12 @@ import { GLTFLoader } from './src/jsm/loaders/GLTFLoader.js';
 let container, stats, clock, gui, mixer, actions, activeAction, previousAction;
 let camera, scene, renderer, model;
 
+//objetos de escena
+let torre_model, pino_model_1, pino_model_2, pino_model_3;
+
 // CONFIGURACIÓN DE PROPIEDAD Y VALOR INICIAL DEL CICLO DE ANIMACIÓN (CLIP)
 // EL NOMBRE DE ESTA PROPIEDAD ('ciclo') ESTÁ VINCULADO CON EL NOMBRE A MOSTRAR EN EL MENÚ
-// i.e. LO QUE SE MUESTRA EN EL MENÚ ES 'ciclo'. 	
+// i.e. LO QUE SE MUESTRA EN EL MENÚ ES 'ciclo'.
 const api = { ciclo: 'ocio' };
 
 init();
@@ -60,9 +63,9 @@ function init() {
 
     // ------------------ PISO ------------------
     // CREACIPON DE LA MALLA PARA EL PSIO
-    const mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 10, 10 ), 
+    const mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 10, 10 ),
                                 // MATERIAL (color)
-                                 new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+                                 new THREE.MeshPhongMaterial( { color: 0x0E370C, depthWrite: false } ) );
     mesh.rotation.x = - Math.PI / 2;
     scene.add( mesh );
     // CREACIÓN DE CUADRICULA "GUÍA"
@@ -72,7 +75,7 @@ function init() {
     //		1.0 = sin transparencia
     grid.material.opacity = 0.2;
     grid.material.transparent = true;
-    scene.add( grid );
+    // scene.add( grid );
 
     // ------------------ MODELO 3D ------------------
 
@@ -90,7 +93,66 @@ function init() {
         // SE MUESTRA INFORMACIÓN DE ERROR
         console.error( e );
     } );
-    
+    loader.load
+
+    //CARGANDO TORRE
+    loader.load('./src/models/gltf/torre_mejorada_pintada.glb', function(gltf){
+        torre_model = gltf.scene;
+        torre_model.scale.set(0.8,1.0,0.8);
+        torre_model.position.set(5,0,-5);
+
+        let torre_izq = torre_model.clone();
+        torre_izq.position.set(-5,0,-5);
+        scene.add(torre_model);
+        scene.add(torre_izq);
+    }, undefined, function ( e ) {
+        // SE MUESTRA INFORMACIÓN DE ERROR
+        console.error( e );
+    }   );
+
+    loader.load('./src/models/gltf/muro.glb', function(gltf){
+    let muro = gltf.scene;
+    muro.scale.set(1.4,1.2,1);
+    muro.position.set(0,0,-5);
+    scene.add(muro);
+
+    }, undefined, function(e){
+        console.error(e);
+    });
+
+    //CARGANDO PINOS
+    loader.load('./src/models/gltf/pinos/pino1.glb', function(gltf){
+        pino_model_1 = gltf.scene;
+        pino_model_1.scale.set(0.5,0.5,0.5);
+        pino_model_1.position.set(-7,0,-1);
+        scene.add(pino_model_1);
+
+    }, undefined, function(e){
+        console.error(e);
+    });
+    loader.load('./src/models/gltf/pinos/pino2.glb', function(gltf){
+        pino_model_2 = gltf.scene;
+        pino_model_2.scale.set(0.3,0.3,0.3);
+        pino_model_2.position.set(-6,0,-3);
+        scene.add(pino_model_2);
+
+    }, undefined, function(e){
+        console.error(e);
+    });
+    loader.load('./src/models/gltf/pinos/pino3.glb', function(gltf){
+        pino_model_3 = gltf.scene;
+        pino_model_3.scale.set(0.5,0.5,0.5);
+        pino_model_3.position.set(6,0,-3);
+        scene.add(pino_model_3);
+
+    }, undefined, function(e){
+        console.error(e);
+    });
+
+
+
+
+
     // PROCESO DE RENDERIZADO DE LA ESCENA
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -114,6 +176,10 @@ function init() {
 
 }
 
+function getAnimations(){
+    console.log("anims");
+}
+
 function createGUI( model, animations ) {
     // OPCIONES (CONSTANTES) PARA MENÚ DE CICLOS
     const ciclos = [ 'ocio', 'caminar', 'saltar', 'roblox', 'saludar'];
@@ -131,7 +197,7 @@ function createGUI( model, animations ) {
     // SE VISUALIZA EN CONSOLA LOS NOMBRES DE LAS ANIMACIONES
     console.log('Lista de animaciones: ');
     console.log(animations);
-    
+
     // RECORRIDO DEL ARREGLO DE ANIMACIONES PASADO COMO PARÁMETRO
     for ( let i = 0; i < animations.length; i ++ ) {
         // TRANSFORMACIÓN DE ANIMACIONES A "CLIPS"
@@ -179,7 +245,7 @@ function createGUI( model, animations ) {
             console.log('se dio clic sobre la opción "'+name+'""');
             // SE ACTIVA LA ANIMACIÓN DE LA CAPTURA DE MOVIMIENTO, CON UNA TRANSICIÓN DE 0.2 SEGUNDOS
             fadeToAction( name, 0.2 );
-            // SE ESPECIFICA LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación) 
+            // SE ESPECIFICA LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación)
             mixer.addEventListener( 'finished', restoreState );
         };
         // SE LA OPCIÓN CON SU FUNCIÓN Y EL NOMBRE DE LA ANIMACIÓN
@@ -188,12 +254,12 @@ function createGUI( model, animations ) {
 
     // SE DEFINE FUNCIÓN TIPO CallBack, EJECUTABLE CADA QUE SE FINALICE UNA ACCIÓN
     function restoreState() {
-        // SE REMUEVE LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación) 
+        // SE REMUEVE LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación)
         mixer.removeEventListener( 'finished', restoreState );
         // SE RE-ACTIVA EL CICLO DE ANIMACIÓN ACTUAL, CON UNA TRANSICIÓN DE 0.2 SEGUNDOS
         fadeToAction( api.ciclo, 0.2 );
     }
-    
+
     // SE AGREGAN LAS OPCIONES AL MENÚ (YA CONFIGURADAS CON SU CallBack)
     for ( let i = 0; i < capturas.length; i ++ ) {
         crearCapturaCallback( capturas[ i ] );
