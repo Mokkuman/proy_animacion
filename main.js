@@ -3,8 +3,12 @@
     |   INFORMACIÓN  DEL  PROYECTO   |
      --------------------------------
 
-    Autores:		+ <matricula1> - <nombre1>
-                    + <matricula2> - <nombre2>
+    Autores:		
+                    + <matricula> - Manuel Hernandez de la Rosa
+                    + <matricula> - Diego Leonel Matamoros Pérez.
+                    + 201905400 - César Rojas Juárez
+                    + <matricula> - Angel Jimenez Javier.
+
 
     Propósito:		1. Importar modelos y animaciones 3D en Blender
                     2. Programar una aplicación Web interactiva
@@ -12,267 +16,272 @@
 
     Versión bases:	three.js: https://threejs.org/examples/?q=skinning#webgl_animation_skinning_morph
 **/
-import * as THREE from './build/three.module.js';
 
-import Stats from './src/jsm/libs/stats.module.js';
-import { GUI } from './src/jsm/libs/dat.gui.module.js';
-import { OrbitControls } from './src/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from './src/jsm/loaders/GLTFLoader.js';
+import * as THREE from "./build/three.module.js";
+import Stats from "./src/jsm/libs/stats.module.js";
+import { GUI } from "./src/jsm/libs/dat.gui.module.js";
+import { OrbitControls } from "./src/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "./src/jsm/loaders/GLTFLoader.js";
 
-let container, stats, clock, gui, mixer, actions, activeAction, previousAction;
-let camera, scene, renderer, model;
+let container, stats, clock, gui, mixer, mixer2, actions1, actions2, activeAction, previousAction;
+let camera, scene, renderer, model, model2;
+let torreModel, pinoModel1, pinoModel2, pinoModel3;
 
-//objetos de escena
-let torre_model, pino_model_1, pino_model_2, pino_model_3;
-
-// CONFIGURACIÓN DE PROPIEDAD Y VALOR INICIAL DEL CICLO DE ANIMACIÓN (CLIP)
-// EL NOMBRE DE ESTA PROPIEDAD ('ciclo') ESTÁ VINCULADO CON EL NOMBRE A MOSTRAR EN EL MENÚ
-// i.e. LO QUE SE MUESTRA EN EL MENÚ ES 'ciclo'.
-const api = { ciclo: 'ocio' };
+const api = { ciclo: "ocio" };
 
 init();
 animate();
 
 function init() {
-    // SE CREA UN CONTENEDOR Y SE VINCULA CON EL DOCUMENTO (HTML)
-    container = document.createElement('div');
+    container = document.createElement("div");
     document.body.appendChild(container);
-    // SE CREA Y CONFIGURA LA CÁMARA PRINCIPAÑL
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 100);
-    camera.position.set(- 5, 3, 10);
-    camera.lookAt(new THREE.Vector3(0, 2, 0));
-    // SE CREA LA ESCENA Y SE ASIGNA COLOR DE FONDO
-    scene = new THREE.Scene();
-    // SE CONFIGURA EL COLOR DE FONDO
-    scene.background = new THREE.Color(0x90aede); //e0e0e0
-    // SE CONFIGURA LA NEBLINA
-    scene.fog = new THREE.Fog(0x90aede, 10, 17); //0x90aede, 20, 100
 
-    // SE CREA UN RELOJ
+    camera = new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth / window.innerHeight,
+        0.25,
+        100
+    );
+    camera.position.set(-5, 3, 10);
+    camera.lookAt(new THREE.Vector3(0, 2, 0));
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x90aede);
+    scene.fog = new THREE.Fog(0x90aede, 12, 17);
+
     clock = new THREE.Clock();
 
-    // ------------------ LUCES ------------------
-    // LUZ HEMISFÉRICA
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
-    // LUZ DIRECCIONAL
+    
     const dirLight = new THREE.DirectionalLight(0xffffff);
     dirLight.position.set(0, 20, 10);
     scene.add(dirLight);
 
-    // ------------------ PISO ------------------
-    // CREACIPON DE LA MALLA PARA EL PSIO
-    const mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(10, 10),
-        // MATERIAL (color)
-        new THREE.MeshPhongMaterial({ color: 0x0E370C, depthWrite: false }));
-    mesh.rotation.x = - Math.PI / 2;
-    scene.add(mesh);
-    // CREACIÓN DE CUADRICULA "GUÍA"
+    const floorMesh = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(20, 20),
+        new THREE.MeshPhongMaterial({ color: 0x0e370c, depthWrite: false })
+    );
+    floorMesh.rotation.x = -Math.PI / 2;
+    scene.add(floorMesh);
+
     const grid = new THREE.GridHelper(10, 4, 0xff0000, 0x000000);
-    // OPACIDAD DE LAS LÍNEAS (lo opuesto a transparencia)
-    //		0.0 = transparente
-    //		1.0 = sin transparencia
     grid.material.opacity = 0.2;
     grid.material.transparent = true;
-    // scene.add( grid );
 
-    // ------------------- CONSTRUCTOR DE TIPO LOADER ------------------
+    gui = new GUI();
+
     const loader = new GLTFLoader();
+    loader.load(
+        "./src/models/gltf/persona/persona.glb",
+        function (gltf) {
+            model = gltf.scene;
+            scene.add(model);
+            createGUI(model, gltf.animations);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+    );
 
-    // ------------------ MODELO 3D ------------------
-
-    loader.load('./src/models/gltf/persona/persona.glb', function (gltf) {
-        // SE OBTIENE EL MODELO (scene) DEL ARCHIVO GLTF (.GLB)
-        model = gltf.scene;
-        // SE AGREGA A LA ESCENA PRINCIPAL
-        scene.add(model);
-
-        // CREACIÓN DE LA INTERFAZ GRÁFICA
-        createGUI(model, gltf.animations);
-
-    }, undefined, function (e) {
-        // SE MUESTRA INFORMACIÓN DE ERROR
-        console.error(e);
+    loader.load('./src/models/gltf/persona/Animaciones.glb', function (gltf) {
+        model2 = gltf.scene;
+        model2.visible = false;
+        GUI_capturas(model2, gltf.animations);
     });
 
-    //CARGANDO TORRE
-    loader.load('./src/models/gltf/torre_mejorada_pintada.glb', function (gltf) {
-        torre_model = gltf.scene;
-        torre_model.scale.set(0.8, 1.0, 0.8);
-        torre_model.position.set(5, 0, -5);
+    loader.load(
+        "./src/models/gltf/torre_mejorada_pintada.glb",
+        function (gltf) {
+            torreModel = gltf.scene;
+            torreModel.scale.set(0.8, 1.0, 0.8);
+            torreModel.position.set(5, 0, -5);
 
-        let torre_izq = torre_model.clone();
-        torre_izq.position.set(-5, 0, -5);
-        scene.add(torre_model);
-        scene.add(torre_izq);
-    }, undefined, function (e) {
-        // SE MUESTRA INFORMACIÓN DE ERROR
-        console.error(e);
-    });
+            let torreIzq = torreModel.clone();
+            torreIzq.position.set(-5, 0, -5);
+            scene.add(torreModel);
+            scene.add(torreIzq);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+    );
 
-    loader.load('./src/models/gltf/muro.glb', function (gltf) {
-        let muro = gltf.scene;
-        muro.scale.set(1.4, 1.2, 1);
-        muro.position.set(0, 0, -5);
-        scene.add(muro);
+    loader.load(
+        "./src/models/gltf/muro.glb",
+        function (gltf) {
+            let muro = gltf.scene;
+            muro.scale.set(1.4, 1.2, 1);
+            muro.position.set(0, 0, -5);
+            scene.add(muro);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+    );
 
-    }, undefined, function (e) {
-        console.error(e);
-    });
+    loader.load(
+        "./src/models/gltf/pinos/pino1.glb",
+        function (gltf) {
+            pinoModel1 = gltf.scene;
+            pinoModel1.scale.set(0.5, 0.5, 0.5);
+            pinoModel1.position.set(-7, 0, -1);
+            scene.add(pinoModel1);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+    );
 
-    //CARGANDO PINOS
-    loader.load('./src/models/gltf/pinos/pino1.glb', function (gltf) {
-        pino_model_1 = gltf.scene;
-        pino_model_1.scale.set(0.5, 0.5, 0.5);
-        pino_model_1.position.set(-7, 0, -1);
-        scene.add(pino_model_1);
+    loader.load(
+        "./src/models/gltf/pinos/pino2.glb",
+        function (gltf) {
+            pinoModel2 = gltf.scene;
+            pinoModel2.scale.set(0.3, 0.3, 0.3);
+            pinoModel2.position.set(-6, 0, -3);
+            scene.add(pinoModel2);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+    );
 
-    }, undefined, function (e) {
-        console.error(e);
-    });
-    loader.load('./src/models/gltf/pinos/pino2.glb', function (gltf) {
-        pino_model_2 = gltf.scene;
-        pino_model_2.scale.set(0.3, 0.3, 0.3);
-        pino_model_2.position.set(-6, 0, -3);
-        scene.add(pino_model_2);
+    loader.load(
+        "./src/models/gltf/pinos/pino3.glb",
+        function (gltf) {
+            pinoModel3 = gltf.scene;
+            pinoModel3.scale.set(0.5, 0.5, 0.5);
+            pinoModel3.position.set(6, 0, -3);
+            scene.add(pinoModel3);
+        },
+        undefined,
+        function (e) {
+            console.error(e);
+        }
+        
+    );
 
-    }, undefined, function (e) {
-        console.error(e);
-    });
-    loader.load('./src/models/gltf/pinos/pino3.glb', function (gltf) {
-        pino_model_3 = gltf.scene;
-        pino_model_3.scale.set(0.5, 0.5, 0.5);
-        pino_model_3.position.set(6, 0, -3);
-        scene.add(pino_model_3);
-
-    }, undefined, function (e) {
-        console.error(e);
-    });
-
-    // PROCESO DE RENDERIZADO DE LA ESCENA
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
-    // CONFIGURACIÓN DE FUNCION CallBack EN CASO DE CAMBIO DE TAMAÑO DE LA VENTANA
-    window.addEventListener('resize', onWindowResize, false);
+    window.addEventListener("resize", onWindowResize, false);
 
-    // CONTROL DE ORBITACIÓN CON EL MOUSE
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
     controls.enableZoom = false;
     controls.target.set(0, 2, 0);
     controls.update();
 
-    // ------------------ ESTADOS ------------------
     stats = new Stats();
     container.appendChild(stats.dom);
-}
 
-function getAnimations() {
-    console.log("anims");
-}
+    const grassGeometry = new THREE.CylinderGeometry(0.05, 0.1, 0.5, 3);
+    const grassMaterial = new THREE.MeshToonMaterial({ 
+       color:   0x0e370c, 
+       flatShading: true
+    });
 
-function createGUI(model, animations) {
-    // OPCIONES (CONSTANTES) PARA MENÚ DE CICLOS
-    const ciclos = ['ocio', 'caminar', 'saltar', 'roblox', 'saludar'];
-    // OPCIONES (CONSTANTES) PARA MENÚ DE CAPTURAS DE MOVIMIENTO
-    const capturas = ['Baile', 'Correr', 'BreakDance'];
+    const grassCount = 4000;
+    const instancedMesh = new THREE.InstancedMesh(grassGeometry, grassMaterial, grassCount);
 
-    // INSTANCIACIÓN DEL OBJETO QUE CREA LA INTERFAZ
-    gui = new GUI();
-    // INSTANCIACIÓN DEL OBJETO QUE CONTROLA LA TRANSICIÓN (MEZCLA) ENTRE CLIPS DE ANIMACIÓN
-    mixer = new THREE.AnimationMixer(model);
+    for (let i = 0; i < grassCount; i++) {
+        const position = new THREE.Vector3(
+            Math.random() * 20 - 10,
+            0,
+            Math.random() * 20 - 10
+        );
+        const rotation = new THREE.Euler(0, Math.random() * Math.PI * 2, 0);
 
-    // ARREGLO VACÍO PARA LOS "CLIPS" DE ANIMACIÓN
-    actions = {};
+        const matrix = new THREE.Matrix4();
+        matrix.makeTranslation(position.x, position.y, position.z);
+        matrix.multiply(new THREE.Matrix4().makeRotationFromEuler(rotation)); 
 
-    // SE VISUALIZA EN CONSOLA LOS NOMBRES DE LAS ANIMACIONES
-    console.log('Lista de animaciones: ');
-    console.log(animations);
-
-    // RECORRIDO DEL ARREGLO DE ANIMACIONES PASADO COMO PARÁMETRO
-    for (let i = 0; i < animations.length; i++) {
-        // TRANSFORMACIÓN DE ANIMACIONES A "CLIPS"
-        const clip = animations[i];
-        const action = mixer.clipAction(clip);
-        actions[clip.name] = action;
-
-
-        // SE CONFIGURAN LOS CLIPS QUE << NO >> REALIZARÁN UN LOOP INFINITO QUE SON:
-        //
-        // 	1. Todos aquellos cuyos nombres aparecen en el arreglo "capturas"
-        // 		--> capturas.indexOf( clip.name ) >= 0
-        //
-        //	2. Sólo 'Death', 'Sitting' y 'Standing' del arreglo ciclos
-        // 		--> ciclos.indexOf( clip.name ) >= 4
-        //
-        // if ( capturas.indexOf( clip.name ) >= 0 || ciclos.indexOf( clip.name ) >= 4 ) {
-        //     action.clampWhenFinished = true;
-        //     action.loop = THREE.LoopOnce;
-        // }
+        instancedMesh.setMatrixAt(i, matrix);
     }
 
-    // ------------------ CICLOS ------------------
-    // SE CONFIGURA EL MENÚ PARA SELECCIÓN DE CICLOS
-    const ciclosFolder = gui.addFolder('Ciclos de animación');
-    // SE CONFIGURA SUB-MENÚ (LISTA DESPLEGABLE)
-    const clipCtrl = ciclosFolder.add(api, 'ciclo').options(ciclos);
+    scene.add(instancedMesh);
+}
 
-    // SE DEFINE FUNCIÓN TIPO CallBack, EJECUTABLE CADA QUE SE SELECCIONE UNA OPCIÓN DEL MENÚ DESPLEGABLE
-    clipCtrl.onChange(function () {
-        console.log('se seleccionó la opción "' + api.ciclo + '""');
-        // SEGÚN EL CICLO SELECCIONADO, SE USA SU NOMBRE Y UN VALOR NUMÉRICO (duración)
-        fadeToAction(api.ciclo, 0.5);
-    });
-    // SE CREA MENÚ
-    ciclosFolder.open();
+function GUI_capturas(model2, animations) {
+    const capturas = ["Caminar", "Gallina", "Huracan", "Vuelta", "Backflip"];
+    mixer2 = new THREE.AnimationMixer(model2);
+    actions2 = {};
 
-    // ------------------ CAPTURAS ------------------
-    // SE CONFIGURA EL MENÚ PARA SELECCIÓN DE CAPTURAS
-    const capturaFolder = gui.addFolder('Captura de Movimiento');
+    for (let i = 0; i < animations.length; i++) {
+        const clip = animations[i];
+        const action = mixer2.clipAction(clip);
+        actions2[clip.name] = action;
+        if (capturas.indexOf(clip.name) >= 0) {
+            action.clampWhenFinished = true;
+            action.loop = THREE.LoopOnce;
+        }
+    }
 
-    // SE DEFINE FUNCIÓN TIPO CallBack, EJECUTABLE CADA QUE SE SELECCIONE UNA OPCIÓN DEL MENÚ
+    scene.add(model2);
+
+    const capturaFolder = gui.addFolder("Captura de Movimiento");
+
     function crearCapturaCallback(name) {
         api[name] = function () {
-            console.log('se dio clic sobre la opción "' + name + '""');
-            // SE ACTIVA LA ANIMACIÓN DE LA CAPTURA DE MOVIMIENTO, CON UNA TRANSICIÓN DE 0.2 SEGUNDOS
-            fadeToAction(name, 0.2);
-            // SE ESPECIFICA LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación)
-            mixer.addEventListener('finished', restoreState);
+            model2.visible = true;
+            model.visible = false;
+            fadeToAction(name, 0.2, actions2);
+            mixer.addEventListener("finished", restoreState);
         };
-        // SE LA OPCIÓN CON SU FUNCIÓN Y EL NOMBRE DE LA ANIMACIÓN
         capturaFolder.add(api, name);
     }
 
-    // SE DEFINE FUNCIÓN TIPO CallBack, EJECUTABLE CADA QUE SE FINALICE UNA ACCIÓN
     function restoreState() {
-        // SE REMUEVE LA FUNCIÓN CallBack QUE REGRESA AL ESTADO PREVIO (ciclo de animación)
-        mixer.removeEventListener('finished', restoreState);
-        // SE RE-ACTIVA EL CICLO DE ANIMACIÓN ACTUAL, CON UNA TRANSICIÓN DE 0.2 SEGUNDOS
+        mixer.removeEventListener("finished", restoreState);
         fadeToAction(api.ciclo, 0.2);
     }
 
-    // SE AGREGAN LAS OPCIONES AL MENÚ (YA CONFIGURADAS CON SU CallBack)
     for (let i = 0; i < capturas.length; i++) {
         crearCapturaCallback(capturas[i]);
     }
-    // SE CREA MENÚ
-    capturaFolder.open();
 
-    // SE DEFINE CICLO DE ANIMACIÓN INICIAL
-    activeAction = actions['ocio'];
+    capturaFolder.open();
+    activeAction = actions2["Gallina"];
     activeAction.play();
 }
-/** ---------------------------------------------------------------------------------------------
-DE PREFERENCIA ***NO MODIFICAR*** LAS SIGUIENTES FUNCIONES A MENOS QUE SEA ESTRICAMENTE NECESARIO
---------------------------------------------------------------------------------------------- **/
 
-// FUNCIÓN PARA EL CONTROL DE TRANSICIONES ENTRE ANIMACIONES
-function fadeToAction(name, duration) {
+function createGUI(model, animations) {
+    const ciclos = ["ocio", "caminar", "saltar", "roblox", "saludar"];
+    mixer = new THREE.AnimationMixer(model);
+    actions1 = {};
+
+    for (let i = 0; i < animations.length; i++) {
+        const clip = animations[i];
+        const action = mixer.clipAction(clip);
+        actions1[clip.name] = action;
+    }
+
+    const ciclosFolder = gui.addFolder("Ciclos de animación");
+    const clipCtrl = ciclosFolder.add(api, "ciclo").options(ciclos);
+
+    clipCtrl.onChange(function () {
+        fadeToAction(api.ciclo, 0.5, actions1);
+        if (model2.visible) {
+            model2.visible = false;
+            model.visible = true;
+        }
+    });
+
+    ciclosFolder.open();
+    activeAction = actions1["ocio"];
+    activeAction.play();
+}
+
+function fadeToAction(name, duration, actions) {
     previousAction = activeAction;
     activeAction = actions[name];
 
@@ -288,19 +297,17 @@ function fadeToAction(name, duration) {
         .play();
 }
 
-// FUNCIÓN PARA EL REESCALADO DE VENTANA
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// PARA LA ANIMACIÓN - INVOCACIÓN RECURSIVA
 function animate() {
     const dt = clock.getDelta();
 
-    if (mixer)
-        mixer.update(dt);
+    if (mixer) mixer.update(dt);
+    if (mixer2) mixer2.update(dt);
 
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
